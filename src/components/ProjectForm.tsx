@@ -46,7 +46,6 @@ export default function ProjectForm({
     };
 
     onSubmit(newProject);
-    alert("Project successfully stored");
   }
 
   return (

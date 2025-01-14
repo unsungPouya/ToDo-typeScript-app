@@ -31,8 +31,6 @@ export default function NewProject() {
     return 1;
   });
 
-  // Remove the useEffect for localStorage as it's now handled by the custom hook
-
   const [visibility, setVisibility] = useState<Visibility>({
     form: false,
     taskForm: false,
