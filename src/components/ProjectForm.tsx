@@ -7,6 +7,7 @@ interface ProjectData {
   startTime: string;
   endTime: string;
   description: string;
+  tasks: string[]
 }
 
 interface ProjectFormProps {
@@ -26,6 +27,7 @@ export default function ProjectForm({
     startTime: "",
     endTime: "",
     description: "",
+    tasks:[]
   });
 
   function handleInputChange(key: keyof ProjectData, value: string) {

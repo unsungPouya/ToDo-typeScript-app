@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import ProjectForm from "./ProjectForm";
 import ProjectsDisplay from "./ProjectsDisplay";
+import Task from "./Task";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 interface ProjectData {
   projectId: number;
@@ -8,62 +10,82 @@ interface ProjectData {
   startTime: string;
   endTime: string;
   description: string;
+  tasks: string[];
+}
+
+interface Visibility {
+  form?: boolean;
+  taskForm?: boolean;
 }
 
 export default function NewProject() {
-  const [formVisibilty, setFormVisiblity] = useState<boolean>(false);
-  const [projects, setProjects] = useState<ProjectData[]>(() => {
-    const savedProjects = localStorage.getItem("projects");
-    return savedProjects ? JSON.parse(savedProjects) : [];
-  });
+  // Replace useState with useLocalStorage for projects
+  const [projects, setProjects] = useLocalStorage<ProjectData[]>('projects', []);
 
+  // Replace the manual currentId state management with a custom hook or logic
   const [currentId, setCurrentId] = useState<number>(() => {
     if (projects.length > 0) {
-      const maxId = Math.max(...projects.map(project => project.projectId));
+      const maxId = Math.max(...projects.map((project) => project.projectId));
       return maxId + 1;
     }
     return 1;
   });
 
-  useEffect(() => {
-    localStorage.setItem("projects", JSON.stringify(projects));
-  }, [projects]);
+  // Remove the useEffect for localStorage as it's now handled by the custom hook
+
+  const [visibility, setVisibility] = useState<Visibility>({
+    form: false,
+    taskForm: false,
+  });
 
   function handleProjectSubmit(newProject: ProjectData) {
     setProjects((prevProjects) => [...prevProjects, newProject]);
-    setCurrentId(prevId => prevId + 1);
-    setFormVisiblity(false);
+    setCurrentId((prevId) => prevId + 1);
+    setVisibility((prev) => ({ ...prev, form: false }));
   }
 
   function clearProjects() {
-    setProjects([]);
+    setProjects([]); // This will automatically update localStorage
     setCurrentId(1);
-    localStorage.removeItem("projects");
   }
 
   function removeCurrentProject(projectId: number) {
-    setProjects(prevProjects => 
-      prevProjects.filter(project => project.projectId !== projectId)
+    setProjects((prevProjects) =>
+      prevProjects.filter((project) => project.projectId !== projectId)
     );
+  }
+
+  const projectID = useRef<number | null>(null);
+
+  function onSelectProject(id: number) {
+    setVisibility((prev) => ({ ...prev, taskForm: true }));
+    projectID.current = id;
   }
 
   return (
     <div>
-      {formVisibilty ? (
-        <ProjectForm 
+      {visibility.form && (
+        <ProjectForm
           currentId={currentId}
           onSubmit={handleProjectSubmit}
-          onCancel={() => setFormVisiblity(false)}
+          onCancel={() => setVisibility((prev) => ({ ...prev, form: false }))}
         />
-      ) : (
-        'choose or create a project'
+      )}
+      {visibility.taskForm && projectID.current !== null && (
+        <Task
+          onCancel={() => setVisibility((prev) => ({ ...prev, taskForm: false }))}
+          projectID={projectID.current}
+        />
       )}
 
-      <ProjectsDisplay 
-        projects={projects} 
-        onClearProjects={clearProjects} 
+      <ProjectsDisplay
+        projects={projects}
+        onClearProjects={clearProjects}
         onRemoveProject={removeCurrentProject}
-        setFormVisiblity={setFormVisiblity}
+        setFormVisiblity={() =>
+          setVisibility((prev) => ({ ...prev, form: true }))
+        }
+        onSelect={onSelectProject}
       />
     </div>
   );
